@@ -399,7 +399,7 @@ export default function App() {
                       </div>
                       <span
                         onDoubleClick={() => !todo.completed && startEditing(todo.id, todo.text)}
-                        className={`block text-base transition-all duration-300 cursor-text truncate ${
+                        className={`block text-base transition-all duration-300 cursor-text break-words ${
                           todo.completed ? 'text-slate-400 line-through decoration-1' : 'text-slate-700 font-medium'
                         }`}
                       >
