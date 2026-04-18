@@ -131,14 +131,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100">
-      <div className="max-w-2xl mx-auto px-4 py-12 md:py-20">
+      <div className="max-w-2xl mx-auto px-4 py-6 md:py-20">
         {/* Header */}
         <header className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-200">
               <ListTodo className="text-white w-6 h-6" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-800">TaskFlow</h1>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">TaskFlow</h1>
           </div>
           <div className="text-right">
             <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Прогресс</p>
@@ -149,7 +149,7 @@ export default function App() {
         </header>
 
         {/* Progress Bar */}
-        <div className="mb-12">
+        <div className="mb-8 md:mb-12">
           <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
@@ -172,7 +172,7 @@ export default function App() {
         </div>
 
         {/* Input Area */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-3 mb-10 shadow-sm group hover:border-slate-300 transition-all">
+        <div className="bg-white rounded-2xl border border-slate-200 p-3 mb-6 md:mb-10 shadow-sm group hover:border-slate-300 transition-all">
           <form onSubmit={addTodo} className="relative mb-3">
             <input
               type="text"
@@ -191,7 +191,7 @@ export default function App() {
           </form>
           
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-50">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
                 <Flag className="w-3.5 h-3.5 text-slate-400" />
                 <div className="flex bg-slate-50 p-0.5 rounded-lg border border-slate-100">
@@ -232,7 +232,7 @@ export default function App() {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center justify-between mb-8 px-1">
+        <div className="flex items-center justify-between mb-6 md:mb-8 px-1">
           <div className="flex gap-1">
             {(['all', 'active', 'completed'] as FilterType[]).map((f) => (
               <button
@@ -366,7 +366,7 @@ export default function App() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     {!todo.completed && editingId !== todo.id && (
                       <button
                         onClick={() => startEditing(todo.id, todo.text)}
@@ -417,7 +417,7 @@ export default function App() {
 
         {/* Footer Info */}
         {todos.length > 0 && (
-          <footer className="mt-16 pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
+          <footer className="mt-10 sm:mt-16 pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
             <p className="opacity-60">Создано с React и Tailwind CSS</p>
             <div className="flex gap-6">
               <span className="flex items-center gap-2">
