@@ -1,17 +1,1 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Manrope:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
-
-*, *::before, *::after { box-sizing: border-box; }
-
-body {
-  font-family: 'Manrope', Helvetica, Arial, sans-serif;
-  background: #F8F8F6;
-  color: #111111;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
-
-::selection {
-  background: #E8001C;
-  color: #FFFFFF;
-}
