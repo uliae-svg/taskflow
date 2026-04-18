@@ -460,8 +460,7 @@ export default function App() {
         {/* Footer Info */}
         {todos.length > 0 && (
           <footer className="mt-10 sm:mt-16 pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
-            <p className="opacity-60">Создано с React и Tailwind CSS</p>
-            <div className="flex gap-6">
+<div className="flex gap-6">
               <span className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]"></span>
                 {stats.active} Активно
