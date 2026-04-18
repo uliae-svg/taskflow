@@ -21,17 +21,17 @@ interface Todo {
 type FilterType = 'all' | 'active' | 'completed';
 
 const COLORS = [
-  { id: 'slate',   bg: 'bg-slate-500'   },
-  { id: 'indigo',  bg: 'bg-indigo-500'  },
-  { id: 'rose',    bg: 'bg-rose-500'    },
-  { id: 'amber',   bg: 'bg-amber-500'   },
-  { id: 'emerald', bg: 'bg-emerald-500' },
+  { id: 'slate',   bg: 'bg-slate-500',   hex: '#64748B' },
+  { id: 'indigo',  bg: 'bg-indigo-500',  hex: '#6366F1' },
+  { id: 'rose',    bg: 'bg-rose-500',    hex: '#F43F5E' },
+  { id: 'amber',   bg: 'bg-amber-500',   hex: '#F59E0B' },
+  { id: 'emerald', bg: 'bg-emerald-500', hex: '#10B981' },
 ];
 
-const PRIORITIES: { id: Priority; label: string; color: string }[] = [
-  { id: 'low',    label: 'Низкий',  color: 'text-cyan-600'  },
-  { id: 'medium', label: 'Средний', color: 'text-amber-600' },
-  { id: 'high',   label: 'Высокий', color: 'text-rose-600'  },
+const PRIORITIES: { id: Priority; label: string; hex: string }[] = [
+  { id: 'low',    label: 'Низкий',  hex: '#2D8A99' },
+  { id: 'medium', label: 'Средний', hex: '#C4800A' },
+  { id: 'high',   label: 'Высокий', hex: '#CC3329' },
 ];
 
 const FILTER_LABELS: Record<FilterType, string> = {
@@ -39,6 +39,10 @@ const FILTER_LABELS: Record<FilterType, string> = {
   active:    'Активные',
   completed: 'Выполненные',
 };
+
+const MONO = "'Space Mono', 'Courier New', monospace";
+const SERIF = "'Lora', Georgia, serif";
+const DISPLAY = "'DM Serif Display', Georgia, serif";
 
 export default function App() {
   const [todos, setTodos] = useState<Todo[]>(() => {
@@ -61,7 +65,6 @@ export default function App() {
   const addTodo = (e?: FormEvent) => {
     e?.preventDefault();
     if (!inputValue.trim()) return;
-
     const newTodo: Todo = {
       id: crypto.randomUUID(),
       text: inputValue.trim(),
@@ -70,19 +73,16 @@ export default function App() {
       priority: selectedPriority,
       color: selectedColor,
     };
-
     setTodos(prev => [newTodo, ...prev]);
     setInputValue('');
   };
 
   const toggleTodo = (id: string) => {
-    setTodos(prev => prev.map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
+    setTodos(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
   };
 
   const deleteTodo = (id: string) => {
-    setTodos(prev => prev.filter(todo => todo.id !== id));
+    setTodos(prev => prev.filter(t => t.id !== id));
   };
 
   const startEditing = (id: string, text: string) => {
@@ -94,50 +94,40 @@ export default function App() {
     if (!editValue.trim()) {
       deleteTodo(id);
     } else {
-      setTodos(prev => prev.map(todo =>
-        todo.id === id ? { ...todo, text: editValue.trim() } : todo
-      ));
+      setTodos(prev => prev.map(t => t.id === id ? { ...t, text: editValue.trim() } : t));
     }
     setEditingId(null);
   };
 
   const updateTodoProperty = (id: string, updates: Partial<Todo>) => {
-    setTodos(prev => prev.map(todo =>
-      todo.id === id ? { ...todo, ...updates } : todo
-    ));
+    setTodos(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
   };
 
-  const cancelEdit = () => {
-    setEditingId(null);
-  };
+  const cancelEdit = () => setEditingId(null);
 
   const clearCompleted = () => {
-    setTodos(prev => prev.filter(todo => !todo.completed));
+    setTodos(prev => prev.filter(t => !t.completed));
   };
 
   const toggleListening = () => {
     const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
     if (!SR) return;
-
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
       return;
     }
-
     const recognition = new SR();
     recognition.lang = 'ru-RU';
     recognition.continuous = false;
     recognition.interimResults = false;
-
-    recognition.onresult = (e) => {
+    recognition.onresult = (e: any) => {
       const transcript = e.results[0][0].transcript;
       setInputValue(prev => prev ? `${prev} ${transcript}` : transcript);
       setIsListening(false);
     };
     recognition.onerror = () => setIsListening(false);
     recognition.onend   = () => setIsListening(false);
-
     recognitionRef.current = recognition;
     recognition.start();
     setIsListening(true);
@@ -159,90 +149,116 @@ export default function App() {
   const progress = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100">
-      <div className="max-w-2xl mx-auto px-4 py-6 md:py-20">
-        {/* Header */}
-        <header className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-200">
-              <ListTodo className="text-white w-6 h-6" />
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-800">TaskFlow</h1>
-          </div>
-          <div className="text-right">
-            <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Прогресс</p>
-            <p className="text-2xl font-bold text-indigo-600">
-              {stats.completed}<span className="text-slate-300 mx-1">/</span>{stats.total}
-            </p>
-          </div>
-        </header>
+    <div className="min-h-screen" style={{ background: '#F6F1E9', color: '#1C1A26' }}>
+      <div className="max-w-2xl mx-auto px-5 py-8 md:py-16">
 
-        {/* Progress Bar */}
-        <div className="mb-8 md:mb-12">
-          <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+        {/* ── HEADER ─────────────────────────────────────────── */}
+        <header className="mb-10">
+          <div style={{ height: '1.5px', background: '#1C1A26' }} className="mb-5" />
+          <div className="flex items-end justify-between gap-4">
+            <h1
+              style={{ fontFamily: DISPLAY }}
+              className="text-5xl sm:text-6xl md:text-7xl leading-[0.92] tracking-tight"
+            >
+              TaskFlow
+            </h1>
+            <div style={{ fontFamily: MONO }} className="text-right shrink-0 pb-1.5">
+              <div className="text-[8px] uppercase tracking-[0.3em] mb-1" style={{ color: '#A09899' }}>
+                выполнено
+              </div>
+              <div className="text-2xl sm:text-3xl leading-none">
+                <span>{stats.completed}</span>
+                <span style={{ color: '#C8C3BB' }} className="mx-1.5">/</span>
+                <span>{stats.total}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Progress IS the divider — the amber line fills as tasks complete */}
+          <div className="relative mt-5" style={{ height: '2px', background: 'rgba(28,26,38,0.09)' }}>
             <motion.div
+              className="absolute inset-y-0 left-0"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              transition={{ type: "spring", stiffness: 50, damping: 15 }}
-              className={`h-full rounded-full ${progress === 100 ? 'bg-emerald-500' : 'bg-indigo-600'}`}
+              transition={{ type: 'spring', stiffness: 50, damping: 15 }}
+              style={{ background: '#C4800A' }}
             />
           </div>
-          {progress === 100 && stats.total > 0 && (
-            <motion.p
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-[10px] font-bold text-emerald-600 mt-2 text-center uppercase tracking-[0.2em]"
-            >
-              🎉 Все задачи выполнены! Отличная работа!
-            </motion.p>
-          )}
-        </div>
 
-        {/* Input Area */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-3 mb-6 md:mb-10 shadow-sm group hover:border-slate-300 transition-all">
-          <form onSubmit={addTodo} className="flex items-center gap-2 mb-3">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Что нужно сделать?"
-              className="flex-1 bg-transparent px-3 py-1.5 text-base focus:outline-none placeholder:text-slate-400 font-medium min-w-0"
-            />
-            <button
-              type="button"
-              onClick={toggleListening}
-              className={`flex-shrink-0 p-2 rounded-lg transition-all ${
-                isListening
-                  ? 'bg-rose-500 text-white animate-pulse'
-                  : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'
-              }`}
-              aria-label={isListening ? 'Остановить запись' : 'Голосовой ввод'}
-            >
-              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-            </button>
-            <button
-              type="submit"
-              disabled={!inputValue.trim()}
-              className="flex-shrink-0 px-3 py-2 bg-indigo-600 text-white rounded-lg font-semibold transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-50 disabled:hover:bg-indigo-600 disabled:active:scale-100 flex items-center justify-center"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-          </form>
+          <AnimatePresence>
+            {progress === 100 && stats.total > 0 && (
+              <motion.p
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                style={{ fontFamily: MONO, color: '#2D7A4F' }}
+                className="text-[8px] uppercase tracking-[0.3em] mt-2 text-center"
+              >
+                ✦ все задачи выполнены ✦
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </header>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-50">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Flag className="w-3.5 h-3.5 text-slate-400" />
-                <div className="flex bg-slate-50 p-0.5 rounded-lg border border-slate-100">
-                  {PRIORITIES.map((p) => (
+        {/* ── INPUT AREA ─────────────────────────────────────── */}
+        <div className="mb-8">
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: '#FFFDF9',
+              border: '1px solid rgba(28,26,38,0.08)',
+              boxShadow: '0 2px 14px rgba(28,26,38,0.06), 0 1px 3px rgba(28,26,38,0.04)',
+            }}
+          >
+            <form onSubmit={addTodo} className="flex items-center gap-2 px-4 pt-4 pb-3">
+              <input
+                type="text"
+                value={inputValue}
+                onChange={e => setInputValue(e.target.value)}
+                placeholder="Что нужно сделать?"
+                style={{ fontFamily: SERIF }}
+                className="flex-1 min-w-0 text-base italic placeholder:italic bg-transparent focus:outline-none"
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              />
+              <button
+                type="button"
+                onClick={toggleListening}
+                style={{ color: isListening ? '#CC3329' : '#C8C3BB' }}
+                className={`flex-shrink-0 p-1.5 rounded-lg transition-all hover:opacity-70 ${isListening ? 'animate-pulse' : ''}`}
+                aria-label={isListening ? 'Остановить запись' : 'Голосовой ввод'}
+              >
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </button>
+              <button
+                type="submit"
+                disabled={!inputValue.trim()}
+                className="flex-shrink-0 px-3.5 py-2 rounded-lg transition-all active:scale-95 disabled:opacity-20 flex items-center justify-center"
+                style={{ background: '#1C1A26', color: '#F6F1E9' }}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </form>
+
+            <div
+              className="px-4 pb-3.5 pt-2.5 flex flex-wrap items-center gap-4"
+              style={{ borderTop: '1px solid rgba(28,26,38,0.05)' }}
+            >
+              {/* Priority selector */}
+              <div className="flex items-center gap-2.5">
+                <Flag className="w-3 h-3" style={{ color: '#C8C3BB' }} />
+                <div className="flex gap-3">
+                  {PRIORITIES.map(p => (
                     <button
                       key={p.id}
                       onClick={() => setSelectedPriority(p.id)}
-                      className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all uppercase tracking-wider ${
-                        selectedPriority === p.id
-                          ? 'bg-white text-indigo-600 shadow-sm'
-                          : 'text-slate-400 hover:text-slate-600'
-                      }`}
+                      style={{
+                        fontFamily: MONO,
+                        color: selectedPriority === p.id ? p.hex : '#C8C3BB',
+                        borderBottom: selectedPriority === p.id
+                          ? `1.5px solid ${p.hex}`
+                          : '1.5px solid transparent',
+                      }}
+                      className="text-[9px] uppercase tracking-[0.2em] pb-0.5 transition-all"
                     >
                       {p.label}
                     </button>
@@ -250,17 +266,19 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Color swatches */}
               <div className="flex items-center gap-2">
-                <Palette className="w-3.5 h-3.5 text-slate-400" />
-                <div className="flex gap-1">
-                  {COLORS.map((c) => (
+                <Palette className="w-3 h-3" style={{ color: '#C8C3BB' }} />
+                <div className="flex gap-1.5">
+                  {COLORS.map(c => (
                     <button
                       key={c.id}
                       onClick={() => setSelectedColor(c.id)}
-                      className={`w-5 h-5 rounded-full transition-all ${c.bg} ${
+                      style={{ backgroundColor: c.hex }}
+                      className={`w-3.5 h-3.5 rounded-full transition-all ${
                         selectedColor === c.id
-                          ? 'ring-2 ring-offset-1 ring-indigo-500 scale-110'
-                          : 'opacity-40 hover:opacity-100'
+                          ? 'ring-2 ring-offset-1 ring-[#1C1A26]/25 scale-110'
+                          : 'opacity-30 hover:opacity-70'
                       }`}
                     />
                   ))}
@@ -270,42 +288,52 @@ export default function App() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center justify-between mb-6 md:mb-8 px-1">
-          <div className="flex gap-1">
-            {(['all', 'active', 'completed'] as FilterType[]).map((f) => (
+        {/* ── FILTER BAR ─────────────────────────────────────── */}
+        <div className="flex items-center justify-between mb-6 px-0.5">
+          <div className="flex gap-4">
+            {(['all', 'active', 'completed'] as FilterType[]).map(f => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  filter === f
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                }`}
+                style={{
+                  fontFamily: MONO,
+                  color: filter === f ? '#1C1A26' : '#B8B3AB',
+                  borderBottom: filter === f
+                    ? '1.5px solid #1C1A26'
+                    : '1.5px solid transparent',
+                }}
+                className="text-[9px] uppercase tracking-[0.22em] pb-0.5 transition-all"
               >
                 {FILTER_LABELS[f]}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2">
-            {stats.completed > 0 && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                onClick={clearCompleted}
-                className="text-[10px] font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-lg transition-all uppercase tracking-widest flex items-center gap-1.5"
-              >
-                <Trash2 className="w-3 h-3" />
-                Очистить
-              </motion.button>
-            )}
-            <div className="hidden sm:flex px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] items-center gap-2 border-l border-slate-200 ml-1">
-              Задач: {filteredTodos.length}
-            </div>
+          <div className="flex items-center gap-4">
+            <AnimatePresence>
+              {stats.completed > 0 && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  onClick={clearCompleted}
+                  style={{ fontFamily: MONO, color: '#CC3329' }}
+                  className="text-[9px] uppercase tracking-[0.2em] flex items-center gap-1.5 hover:opacity-60 transition-all"
+                >
+                  <Trash2 className="w-2.5 h-2.5" />
+                  Очистить
+                </motion.button>
+              )}
+            </AnimatePresence>
+            <span
+              style={{ fontFamily: MONO, color: '#C8C3BB' }}
+              className="hidden sm:block text-[9px] uppercase tracking-[0.2em]"
+            >
+              {filteredTodos.length} задач
+            </span>
           </div>
         </div>
 
-        {/* Todo List */}
+        {/* ── TODO LIST ──────────────────────────────────────── */}
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={filter}
@@ -313,163 +341,204 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.1 }}
-            className="space-y-3"
           >
-          <AnimatePresence initial={false}>
-            {filteredTodos.length > 0 ? (
-              filteredTodos.map((todo) => (
-                <motion.div
-                  key={todo.id}
-                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
-                  className={`group flex items-center gap-4 bg-white py-3 px-4 rounded-xl border-l-4 transition-all hover:shadow-sm ${
-                    todo.completed ? 'border-slate-100 bg-slate-50/50 opacity-75' : ''
-                  }`}
-                  style={{
-                    backgroundColor: !todo.completed ? `var(--color-${todo.color}-50)` : undefined,
-                    borderColor:      !todo.completed ? `var(--color-${todo.color}-500)` : undefined,
-                  }}
-                >
-                  <button
-                    onClick={() => toggleTodo(todo.id)}
-                    className={`flex-shrink-0 transition-colors ${
-                      todo.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-indigo-400'
-                    }`}
-                  >
-                    {todo.completed
-                      ? <CheckCircle2 className="w-6 h-6 fill-emerald-50" />
-                      : <Circle className="w-6 h-6" />
-                    }
-                  </button>
+            <AnimatePresence initial={false}>
+              {filteredTodos.length > 0 ? (
+                filteredTodos.map(todo => {
+                  const priorityConfig = PRIORITIES.find(p => p.id === todo.priority);
+                  const colorConfig    = COLORS.find(c => c.id === todo.color);
 
-                  {editingId === todo.id ? (
-                    <div className="flex-grow space-y-2">
-                      <input
-                        autoFocus
-                        type="text"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={() => saveEdit(todo.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter')  saveEdit(todo.id);
-                          if (e.key === 'Escape') cancelEdit();
-                        }}
-                        className="w-full text-base bg-white border-b border-indigo-500 focus:outline-none py-1 px-1 transition-all font-medium"
-                      />
-                      <div className="flex items-center gap-3">
-                        <div className="flex gap-0.5 bg-slate-100 p-0.5 rounded-lg">
-                          {PRIORITIES.map((p) => (
-                            <button
-                              key={p.id}
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                updateTodoProperty(todo.id, { priority: p.id });
+                  return (
+                    <motion.article
+                      key={todo.id}
+                      initial={{ opacity: 0, y: 8, scale: 0.99 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
+                      className="relative rounded-xl overflow-hidden mb-3 group"
+                      style={{
+                        background: todo.completed ? '#F3EFE6' : '#FFFDF9',
+                        border: '1px solid rgba(28,26,38,0.07)',
+                        boxShadow: '0 1px 4px rgba(28,26,38,0.05), 0 1px 2px rgba(28,26,38,0.04)',
+                      }}
+                    >
+                      {/* Left color tab */}
+                      {!todo.completed && (
+                        <div
+                          className="absolute inset-y-0 left-0 w-1"
+                          style={{ backgroundColor: colorConfig?.hex }}
+                        />
+                      )}
+
+                      <div className={`flex items-start gap-3 py-3.5 pr-4 ${!todo.completed ? 'pl-5' : 'pl-4'}`}>
+
+                        {/* Checkbox */}
+                        <button
+                          onClick={() => toggleTodo(todo.id)}
+                          className="flex-shrink-0 mt-0.5 transition-all hover:scale-110"
+                          style={{ color: todo.completed ? '#2D7A4F' : '#C8C3BB' }}
+                        >
+                          {todo.completed
+                            ? <CheckCircle2 className="w-5 h-5" />
+                            : <Circle className="w-5 h-5" />
+                          }
+                        </button>
+
+                        {/* Content */}
+                        {editingId === todo.id ? (
+                          <div className="flex-grow space-y-2.5">
+                            <input
+                              autoFocus
+                              type="text"
+                              value={editValue}
+                              onChange={e => setEditValue(e.target.value)}
+                              onBlur={() => saveEdit(todo.id)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter')  saveEdit(todo.id);
+                                if (e.key === 'Escape') cancelEdit();
                               }}
-                              className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${
-                                todo.priority === p.id ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'
+                              style={{ fontFamily: SERIF, borderBottom: '1.5px solid #C4800A' }}
+                              className="w-full text-base italic bg-transparent focus:outline-none py-0.5 text-[#1C1A26]"
+                            />
+                            <div className="flex items-center gap-3">
+                              <div className="flex gap-3">
+                                {PRIORITIES.map(p => (
+                                  <button
+                                    key={p.id}
+                                    onMouseDown={e => {
+                                      e.preventDefault();
+                                      updateTodoProperty(todo.id, { priority: p.id });
+                                    }}
+                                    style={{
+                                      fontFamily: MONO,
+                                      color: todo.priority === p.id ? p.hex : '#C8C3BB',
+                                      borderBottom: todo.priority === p.id
+                                        ? `1px solid ${p.hex}`
+                                        : '1px solid transparent',
+                                    }}
+                                    className="text-[8px] uppercase tracking-[0.2em] pb-0.5 transition-all"
+                                  >
+                                    {p.label}
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="flex gap-1">
+                                {COLORS.map(c => (
+                                  <button
+                                    key={c.id}
+                                    onMouseDown={e => {
+                                      e.preventDefault();
+                                      updateTodoProperty(todo.id, { color: c.id });
+                                    }}
+                                    style={{ backgroundColor: c.hex }}
+                                    className={`w-3 h-3 rounded-full transition-all ${
+                                      todo.color === c.id
+                                        ? 'ring-1 ring-offset-1 ring-[#1C1A26]/25 scale-110'
+                                        : 'opacity-30 hover:opacity-70'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex-grow min-w-0">
+                            <span
+                              style={{ fontFamily: MONO, color: priorityConfig?.hex }}
+                              className="block text-[8px] uppercase tracking-[0.25em] mb-0.5"
+                            >
+                              {priorityConfig?.label}
+                            </span>
+                            <span
+                              onDoubleClick={() => !todo.completed && startEditing(todo.id, todo.text)}
+                              style={{ fontFamily: SERIF }}
+                              className={`block text-base leading-relaxed break-words cursor-text transition-all duration-300 ${
+                                todo.completed
+                                  ? 'line-through text-[#B8B3AB] decoration-1'
+                                  : 'text-[#1C1A26]'
                               }`}
                             >
-                              {p.label}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="flex gap-1">
-                          {COLORS.map((c) => (
-                            <button
-                              key={c.id}
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                updateTodoProperty(todo.id, { color: c.id });
-                              }}
-                              className={`w-3.5 h-3.5 rounded-full ${c.bg} ${
-                                todo.color === c.id ? 'ring-1 ring-offset-1 ring-indigo-500' : 'opacity-40'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex-grow min-w-0">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <Flag className={`w-2.5 h-2.5 ${PRIORITIES.find(p => p.id === todo.priority)?.color}`} />
-                        <span className={`text-[9px] font-bold uppercase tracking-[0.15em] ${PRIORITIES.find(p => p.id === todo.priority)?.color}`}>
-                          {PRIORITIES.find(p => p.id === todo.priority)?.label}
-                        </span>
-                      </div>
-                      <span
-                        onDoubleClick={() => !todo.completed && startEditing(todo.id, todo.text)}
-                        className={`block text-base transition-all duration-300 cursor-text break-words ${
-                          todo.completed ? 'text-slate-400 line-through decoration-1' : 'text-slate-700 font-medium'
-                        }`}
-                      >
-                        {todo.text}
-                      </span>
-                    </div>
-                  )}
+                              {todo.text}
+                            </span>
+                          </div>
+                        )}
 
-                  <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    {!todo.completed && editingId !== todo.id && (
-                      <button
-                        onClick={() => startEditing(todo.id, todo.text)}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                        aria-label="Редактировать"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => deleteTodo(todo.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                      aria-label="Удалить"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-0.5 flex-shrink-0 mt-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          {!todo.completed && editingId !== todo.id && (
+                            <button
+                              onClick={() => startEditing(todo.id, todo.text)}
+                              className="p-1.5 rounded-lg transition-all hover:opacity-60"
+                              style={{ color: '#C8C3BB' }}
+                              aria-label="Редактировать"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => deleteTodo(todo.id)}
+                            className="p-1.5 rounded-lg transition-all hover:opacity-60"
+                            style={{ color: '#C8C3BB' }}
+                            onMouseEnter={e => (e.currentTarget.style.color = '#CC3329')}
+                            onMouseLeave={e => (e.currentTarget.style.color = '#C8C3BB')}
+                            aria-label="Удалить"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.article>
+                  );
+                })
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="py-16 text-center"
+                >
+                  <div className="mb-5" style={{ color: '#D5D0C6' }}>
+                    {filter === 'completed'
+                      ? <CheckCircle   className="w-9 h-9 mx-auto" />
+                      : filter === 'active'
+                        ? <CircleDashed className="w-9 h-9 mx-auto" />
+                        : <ListTodo    className="w-9 h-9 mx-auto" />
+                    }
                   </div>
+                  <p style={{ fontFamily: SERIF, color: '#C8C3BB' }} className="text-xl italic">
+                    {filter === 'all'
+                      ? 'Список пуст — время действовать'
+                      : filter === 'active'
+                        ? 'Все задачи выполнены'
+                        : 'Нет выполненных задач'}
+                  </p>
                 </motion.div>
-              ))
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="py-20 text-center"
-              >
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-300 mb-4">
-                  {filter === 'completed' ? (
-                    <CheckCircle className="w-8 h-8" />
-                  ) : filter === 'active' ? (
-                    <CircleDashed className="w-8 h-8" />
-                  ) : (
-                    <ListTodo className="w-8 h-8" />
-                  )}
-                </div>
-                <p className="text-slate-400 font-medium">
-                  {filter === 'all'
-                    ? 'Ваш список пуст. Самое время добавить задачи!'
-                    : filter === 'active'
-                      ? 'Нет активных задач. Вы со всем справились!'
-                      : 'Нет выполненных задач. Продолжайте в том же духе!'}
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
           </motion.div>
         </AnimatePresence>
 
-        {/* Footer Info */}
+        {/* ── FOOTER ─────────────────────────────────────────── */}
         {todos.length > 0 && (
-          <footer className="mt-10 sm:mt-16 pt-8 border-t border-slate-200 flex items-center justify-center gap-6 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
-            <span className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+          <footer
+            className="mt-12 pt-5 flex items-center justify-center gap-8"
+            style={{ borderTop: '1px solid rgba(28,26,38,0.09)' }}
+          >
+            <span
+              style={{ fontFamily: MONO, color: '#6366F1' }}
+              className="text-[8px] uppercase tracking-[0.25em] flex items-center gap-2"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.45)] inline-block" />
               {stats.active} Активно
             </span>
-            <span className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            <span
+              style={{ fontFamily: MONO, color: '#059669' }}
+              className="text-[8px] uppercase tracking-[0.25em] flex items-center gap-2"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.45)] inline-block" />
               {stats.completed} Выполнено
             </span>
           </footer>
         )}
+
       </div>
     </div>
   );
