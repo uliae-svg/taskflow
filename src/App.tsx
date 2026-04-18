@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useMemo, FormEvent } from 'react';
-import { Plus, Trash2, CheckCircle2, Circle, ListTodo, Filter, CheckCircle, CircleDashed, Flag, Palette } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef, FormEvent } from 'react';
+import { Plus, Trash2, CheckCircle2, Circle, ListTodo, CheckCircle, CircleDashed, Flag, Palette, Mic, MicOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 type Priority = 'low' | 'medium' | 'high';
@@ -31,6 +31,8 @@ export default function App() {
   const [editValue, setEditValue] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<Priority>('medium');
   const [selectedColor, setSelectedColor] = useState('indigo');
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const colors = [
     { id: 'slate', bg: 'bg-slate-500', border: 'border-slate-200', light: 'bg-slate-50/50' },
@@ -107,6 +109,34 @@ export default function App() {
     setTodos(todos.filter(todo => !todo.completed));
   };
 
+  const toggleListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ru-RU';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript;
+      setInputValue(prev => prev ? prev + ' ' + transcript : transcript);
+      setIsListening(false);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  };
+
   const filteredTodos = useMemo(() => {
     switch (filter) {
       case 'active': return todos.filter(t => !t.completed);
@@ -173,18 +203,30 @@ export default function App() {
 
         {/* Input Area */}
         <div className="bg-white rounded-2xl border border-slate-200 p-3 mb-6 md:mb-10 shadow-sm group hover:border-slate-300 transition-all">
-          <form onSubmit={addTodo} className="relative mb-3">
+          <form onSubmit={addTodo} className="flex items-center gap-2 mb-3">
             <input
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Что нужно сделать?"
-              className="w-full bg-transparent px-3 py-1.5 text-base focus:outline-none placeholder:text-slate-400 font-medium"
+              className="flex-1 bg-transparent px-3 py-1.5 text-base focus:outline-none placeholder:text-slate-400 font-medium min-w-0"
             />
+            <button
+              type="button"
+              onClick={toggleListening}
+              className={`flex-shrink-0 p-2 rounded-lg transition-all ${
+                isListening
+                  ? 'bg-rose-500 text-white animate-pulse'
+                  : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'
+              }`}
+              aria-label={isListening ? 'Остановить запись' : 'Голосовой ввод'}
+            >
+              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            </button>
             <button
               type="submit"
               disabled={!inputValue.trim()}
-              className="absolute right-0 top-0 bottom-0 px-3 bg-indigo-600 text-white rounded-lg font-semibold transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-50 disabled:hover:bg-indigo-600 disabled:active:scale-100 flex items-center justify-center"
+              className="flex-shrink-0 px-3 py-2 bg-indigo-600 text-white rounded-lg font-semibold transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-50 disabled:hover:bg-indigo-600 disabled:active:scale-100 flex items-center justify-center"
             >
               <Plus className="w-5 h-5" />
             </button>
