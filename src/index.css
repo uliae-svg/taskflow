@@ -1,24 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap');
 @import "tailwindcss";
 
 *, *::before, *::after { box-sizing: border-box; }
 
-@keyframes meshShift {
-  0%   { background-position: 0% 50%;   }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%;   }
-}
-
 body {
-  font-family: 'Nunito', system-ui, sans-serif;
-  background: linear-gradient(-45deg, #EDE9FF, #FFE0F5, #FFE8D6, #DDFAF0);
-  background-size: 400% 400%;
-  animation: meshShift 18s ease infinite;
-  color: #2D1B69;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  background: #FFFFFF;
+  color: #0A0A0A;
   min-height: 100vh;
 }
 
 ::selection {
-  background: rgba(168, 85, 247, 0.2);
-  color: #2D1B69;
+  background: #FF1F1F;
+  color: #FFFFFF;
 }
+
+* { border-radius: 0 !important; }
