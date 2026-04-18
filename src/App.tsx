@@ -306,16 +306,23 @@ export default function App() {
         </div>
 
         {/* Todo List */}
-        <div className="space-y-3">
-          <AnimatePresence mode="popLayout" initial={false}>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={filter}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.1 }}
+            className="space-y-3"
+          >
+          <AnimatePresence initial={false}>
             {filteredTodos.length > 0 ? (
               filteredTodos.map((todo) => (
                 <motion.div
                   key={todo.id}
-                  layout
-                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.2 } }}
+                  exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
                   className={`group flex items-center gap-4 bg-white py-3 px-4 rounded-xl border-l-4 transition-all hover:shadow-sm ${
                     todo.completed ? 'border-slate-100 bg-slate-50/50 opacity-75' : ''
                   }`}
@@ -447,11 +454,12 @@ export default function App() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+          </motion.div>
+        </AnimatePresence>
 
         {/* Footer Info */}
         {todos.length > 0 && (
-          <footer className="mt-10 sm:mt-16 pt-8 border-t border-slate-200 flex items-center justify-end gap-6 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
+          <footer className="mt-10 sm:mt-16 pt-8 border-t border-slate-200 flex items-center justify-center gap-6 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
             <span className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
               {stats.active} Активно
