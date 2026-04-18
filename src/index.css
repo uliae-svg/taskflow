@@ -1,27 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 @import "tailwindcss";
 
 *, *::before, *::after { box-sizing: border-box; }
 
+@keyframes meshShift {
+  0%   { background-position: 0% 50%;   }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%;   }
+}
+
 body {
-  font-family: 'Lora', Georgia, serif;
-  background-color: #F6F1E9;
-  color: #1C1A26;
+  font-family: 'Nunito', system-ui, sans-serif;
+  background: linear-gradient(-45deg, #EDE9FF, #FFE0F5, #FFE8D6, #DDFAF0);
+  background-size: 400% 400%;
+  animation: meshShift 18s ease infinite;
+  color: #2D1B69;
   min-height: 100vh;
 }
 
-/* Subtle paper grain overlay */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0.65;
-}
-
 ::selection {
-  background: rgba(196, 128, 10, 0.18);
-  color: #1C1A26;
+  background: rgba(168, 85, 247, 0.2);
+  color: #2D1B69;
 }

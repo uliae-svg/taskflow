@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useMemo, useRef, FormEvent } from 'react';
-import { Plus, Trash2, CheckCircle2, Circle, ListTodo, CheckCircle, CircleDashed, Flag, Palette, Mic, MicOff, Pencil } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef, FormEvent, CSSProperties } from 'react';
+import { Plus, Trash2, CheckCircle2, Circle, ListTodo, CheckCircle, CircleDashed, Mic, MicOff, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 type Priority = 'low' | 'medium' | 'high';
@@ -21,17 +21,17 @@ interface Todo {
 type FilterType = 'all' | 'active' | 'completed';
 
 const COLORS = [
-  { id: 'slate',   bg: 'bg-slate-500',   hex: '#64748B' },
-  { id: 'indigo',  bg: 'bg-indigo-500',  hex: '#6366F1' },
-  { id: 'rose',    bg: 'bg-rose-500',    hex: '#F43F5E' },
-  { id: 'amber',   bg: 'bg-amber-500',   hex: '#F59E0B' },
-  { id: 'emerald', bg: 'bg-emerald-500', hex: '#10B981' },
+  { id: 'slate',   bg: 'bg-slate-400',   hex: '#94A3B8', glow: 'rgba(148,163,184,0.45)' },
+  { id: 'indigo',  bg: 'bg-violet-400',  hex: '#A78BFA', glow: 'rgba(167,139,250,0.45)' },
+  { id: 'rose',    bg: 'bg-pink-400',    hex: '#F472B6', glow: 'rgba(244,114,182,0.45)' },
+  { id: 'amber',   bg: 'bg-amber-400',   hex: '#FBBF24', glow: 'rgba(251,191,36,0.45)'  },
+  { id: 'emerald', bg: 'bg-emerald-400', hex: '#34D399', glow: 'rgba(52,211,153,0.45)'  },
 ];
 
-const PRIORITIES: { id: Priority; label: string; hex: string }[] = [
-  { id: 'low',    label: 'Низкий',  hex: '#2D8A99' },
-  { id: 'medium', label: 'Средний', hex: '#C4800A' },
-  { id: 'high',   label: 'Высокий', hex: '#CC3329' },
+const PRIORITIES: { id: Priority; label: string; hex: string; pillBg: string }[] = [
+  { id: 'low',    label: 'Низкий',  hex: '#10B981', pillBg: 'rgba(16,185,129,0.12)'  },
+  { id: 'medium', label: 'Средний', hex: '#F59E0B', pillBg: 'rgba(245,158,11,0.12)'  },
+  { id: 'high',   label: 'Высокий', hex: '#EC4899', pillBg: 'rgba(236,72,153,0.12)'  },
 ];
 
 const FILTER_LABELS: Record<FilterType, string> = {
@@ -40,22 +40,30 @@ const FILTER_LABELS: Record<FilterType, string> = {
   completed: 'Выполненные',
 };
 
-const MONO = "'Space Mono', 'Courier New', monospace";
-const SERIF = "'Lora', Georgia, serif";
-const DISPLAY = "'DM Serif Display', Georgia, serif";
+const NU = "'Nunito', system-ui, sans-serif";
+const CO = "'Comfortaa', cursive";
+
+const glass = (shadow = ''): CSSProperties => ({
+  background: 'rgba(255,255,255,0.72)',
+  backdropFilter: 'blur(18px)',
+  WebkitBackdropFilter: 'blur(18px)',
+  border: '1.5px solid rgba(255,255,255,0.9)',
+  borderRadius: '20px',
+  boxShadow: shadow || '0 4px 24px rgba(168,85,247,0.08)',
+});
 
 export default function App() {
   const [todos, setTodos] = useState<Todo[]>(() => {
     const saved = localStorage.getItem('taskflow_todos');
     return saved ? JSON.parse(saved) : [];
   });
-  const [inputValue, setInputValue] = useState('');
-  const [filter, setFilter] = useState<FilterType>('all');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState('');
+  const [inputValue, setInputValue]         = useState('');
+  const [filter, setFilter]                 = useState<FilterType>('all');
+  const [editingId, setEditingId]           = useState<string | null>(null);
+  const [editValue, setEditValue]           = useState('');
   const [selectedPriority, setSelectedPriority] = useState<Priority>('medium');
-  const [selectedColor, setSelectedColor] = useState('indigo');
-  const [isListening, setIsListening] = useState(false);
+  const [selectedColor, setSelectedColor]   = useState('indigo');
+  const [isListening, setIsListening]       = useState(false);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
@@ -65,30 +73,24 @@ export default function App() {
   const addTodo = (e?: FormEvent) => {
     e?.preventDefault();
     if (!inputValue.trim()) return;
-    const newTodo: Todo = {
+    setTodos(prev => [{
       id: crypto.randomUUID(),
       text: inputValue.trim(),
       completed: false,
       createdAt: Date.now(),
       priority: selectedPriority,
       color: selectedColor,
-    };
-    setTodos(prev => [newTodo, ...prev]);
+    }, ...prev]);
     setInputValue('');
   };
 
-  const toggleTodo = (id: string) => {
+  const toggleTodo = (id: string) =>
     setTodos(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-  };
 
-  const deleteTodo = (id: string) => {
+  const deleteTodo = (id: string) =>
     setTodos(prev => prev.filter(t => t.id !== id));
-  };
 
-  const startEditing = (id: string, text: string) => {
-    setEditingId(id);
-    setEditValue(text);
-  };
+  const startEditing = (id: string, text: string) => { setEditingId(id); setEditValue(text); };
 
   const saveEdit = (id: string) => {
     if (!editValue.trim()) {
@@ -99,46 +101,31 @@ export default function App() {
     setEditingId(null);
   };
 
-  const updateTodoProperty = (id: string, updates: Partial<Todo>) => {
+  const updateTodoProperty = (id: string, updates: Partial<Todo>) =>
     setTodos(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-  };
 
   const cancelEdit = () => setEditingId(null);
-
-  const clearCompleted = () => {
-    setTodos(prev => prev.filter(t => !t.completed));
-  };
+  const clearCompleted = () => setTodos(prev => prev.filter(t => !t.completed));
 
   const toggleListening = () => {
     const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
     if (!SR) return;
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-      return;
-    }
-    const recognition = new SR();
-    recognition.lang = 'ru-RU';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.onresult = (e: any) => {
-      const transcript = e.results[0][0].transcript;
-      setInputValue(prev => prev ? `${prev} ${transcript}` : transcript);
+    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
+    const r = new SR();
+    r.lang = 'ru-RU'; r.continuous = false; r.interimResults = false;
+    r.onresult = (e: any) => {
+      setInputValue(prev => prev ? `${prev} ${e.results[0][0].transcript}` : e.results[0][0].transcript);
       setIsListening(false);
     };
-    recognition.onerror = () => setIsListening(false);
-    recognition.onend   = () => setIsListening(false);
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
+    r.onerror = r.onend = () => setIsListening(false);
+    recognitionRef.current = r;
+    r.start(); setIsListening(true);
   };
 
   const filteredTodos = useMemo(() => {
-    switch (filter) {
-      case 'active':    return todos.filter(t => !t.completed);
-      case 'completed': return todos.filter(t =>  t.completed);
-      default:          return todos;
-    }
+    if (filter === 'active')    return todos.filter(t => !t.completed);
+    if (filter === 'completed') return todos.filter(t =>  t.completed);
+    return todos;
   }, [todos, filter]);
 
   const stats = useMemo(() => {
@@ -149,52 +136,51 @@ export default function App() {
   const progress = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
 
   return (
-    <div className="min-h-screen" style={{ background: '#F6F1E9', color: '#1C1A26' }}>
+    <div className="min-h-screen" style={{ fontFamily: NU, color: '#2D1B69' }}>
       <div className="max-w-2xl mx-auto px-5 py-8 md:py-16">
 
         {/* ── HEADER ─────────────────────────────────────────── */}
         <header className="mb-10">
-          <div style={{ height: '1.5px', background: '#1C1A26' }} className="mb-5" />
-          <div className="flex items-end justify-between gap-4">
-            <h1
-              style={{ fontFamily: DISPLAY }}
-              className="text-5xl sm:text-6xl md:text-7xl leading-[0.92] tracking-tight"
-            >
-              TaskFlow
-            </h1>
-            <div style={{ fontFamily: MONO }} className="text-right shrink-0 pb-1.5">
-              <div className="text-[8px] uppercase tracking-[0.3em] mb-1" style={{ color: '#A09899' }}>
-                выполнено
-              </div>
-              <div className="text-2xl sm:text-3xl leading-none">
-                <span>{stats.completed}</span>
-                <span style={{ color: '#C8C3BB' }} className="mx-1.5">/</span>
-                <span>{stats.total}</span>
-              </div>
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <div>
+              <p style={{ fontFamily: NU, fontWeight: 700, color: '#C4B5FD', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                ✦ мои задачи
+              </p>
+              <h1 style={{
+                fontFamily: CO, fontWeight: 700,
+                background: 'linear-gradient(135deg, #A855F7 0%, #EC4899 55%, #F97316 100%)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                fontSize: 'clamp(40px, 10vw, 64px)', lineHeight: 1.1,
+              }}>
+                TaskFlow
+              </h1>
+            </div>
+
+            <div style={{ ...glass('0 4px 20px rgba(168,85,247,0.14)'), padding: '14px 20px', textAlign: 'center', flexShrink: 0 }}>
+              <p style={{ fontWeight: 700, color: '#C4B5FD', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '4px' }}>прогресс</p>
+              <p style={{ fontFamily: CO, fontWeight: 700, color: '#A855F7', fontSize: '30px', lineHeight: 1 }}>
+                {stats.completed}<span style={{ color: '#DDD6FE', margin: '0 2px' }}>/</span>{stats.total}
+              </p>
             </div>
           </div>
 
-          {/* Progress IS the divider — the amber line fills as tasks complete */}
-          <div className="relative mt-5" style={{ height: '2px', background: 'rgba(28,26,38,0.09)' }}>
+          {/* Gradient progress bar */}
+          <div style={{ height: '10px', background: 'rgba(168,85,247,0.1)', borderRadius: '999px', overflow: 'hidden' }}>
             <motion.div
-              className="absolute inset-y-0 left-0"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ type: 'spring', stiffness: 50, damping: 15 }}
-              style={{ background: '#C4800A' }}
+              style={{ height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg, #A855F7, #EC4899, #FB923C)' }}
             />
           </div>
 
           <AnimatePresence>
             {progress === 100 && stats.total > 0 && (
               <motion.p
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                style={{ fontFamily: MONO, color: '#2D7A4F' }}
-                className="text-[8px] uppercase tracking-[0.3em] mt-2 text-center"
+                initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                style={{ fontWeight: 700, color: '#10B981', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', textAlign: 'center', marginTop: '8px' }}
               >
-                ✦ все задачи выполнены ✦
+                🎉 все задачи выполнены!
               </motion.p>
             )}
           </AnimatePresence>
@@ -202,132 +188,102 @@ export default function App() {
 
         {/* ── INPUT AREA ─────────────────────────────────────── */}
         <div className="mb-8">
-          <div
-            className="rounded-2xl overflow-hidden"
-            style={{
-              background: '#FFFDF9',
-              border: '1px solid rgba(28,26,38,0.08)',
-              boxShadow: '0 2px 14px rgba(28,26,38,0.06), 0 1px 3px rgba(28,26,38,0.04)',
-            }}
-          >
-            <form onSubmit={addTodo} className="flex items-center gap-2 px-4 pt-4 pb-3">
+          <div style={{ ...glass('0 8px 36px rgba(168,85,247,0.12)'), padding: '4px' }}>
+
+            <form onSubmit={addTodo} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 16px 10px' }}>
               <input
-                type="text"
-                value={inputValue}
+                type="text" value={inputValue}
                 onChange={e => setInputValue(e.target.value)}
-                placeholder="Что нужно сделать?"
-                style={{ fontFamily: SERIF }}
-                className="flex-1 min-w-0 text-base italic placeholder:italic bg-transparent focus:outline-none"
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                placeholder="Что нужно сделать? ✨"
+                style={{ flex: 1, minWidth: 0, fontFamily: NU, fontWeight: 500, fontSize: '16px', background: 'transparent', border: 'none', outline: 'none', color: '#2D1B69' }}
+                className="placeholder:text-purple-200"
               />
-              <button
-                type="button"
-                onClick={toggleListening}
-                style={{ color: isListening ? '#CC3329' : '#C8C3BB' }}
-                className={`flex-shrink-0 p-1.5 rounded-lg transition-all hover:opacity-70 ${isListening ? 'animate-pulse' : ''}`}
+              <button type="button" onClick={toggleListening}
+                style={{ flexShrink: 0, padding: '8px', borderRadius: '10px', border: 'none', background: 'transparent', cursor: 'pointer', color: isListening ? '#EC4899' : '#C4B5FD', transition: 'all 0.2s' }}
+                className={isListening ? 'animate-pulse' : ''}
                 aria-label={isListening ? 'Остановить запись' : 'Голосовой ввод'}
               >
-                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
               </button>
-              <button
-                type="submit"
-                disabled={!inputValue.trim()}
-                className="flex-shrink-0 px-3.5 py-2 rounded-lg transition-all active:scale-95 disabled:opacity-20 flex items-center justify-center"
-                style={{ background: '#1C1A26', color: '#F6F1E9' }}
+              <button type="submit" disabled={!inputValue.trim()}
+                style={{
+                  flexShrink: 0, padding: '10px 18px', borderRadius: '12px', border: 'none',
+                  background: 'linear-gradient(135deg, #A855F7, #EC4899)', color: 'white',
+                  cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  opacity: inputValue.trim() ? 1 : 0.3,
+                  boxShadow: inputValue.trim() ? '0 4px 16px rgba(168,85,247,0.35)' : 'none',
+                }}
+                className="active:scale-95"
               >
-                <Plus className="w-4 h-4" />
+                <Plus size={18} />
               </button>
             </form>
 
-            <div
-              className="px-4 pb-3.5 pt-2.5 flex flex-wrap items-center gap-4"
-              style={{ borderTop: '1px solid rgba(28,26,38,0.05)' }}
-            >
-              {/* Priority selector */}
-              <div className="flex items-center gap-2.5">
-                <Flag className="w-3 h-3" style={{ color: '#C8C3BB' }} />
-                <div className="flex gap-3">
-                  {PRIORITIES.map(p => (
-                    <button
-                      key={p.id}
-                      onClick={() => setSelectedPriority(p.id)}
-                      style={{
-                        fontFamily: MONO,
-                        color: selectedPriority === p.id ? p.hex : '#C8C3BB',
-                        borderBottom: selectedPriority === p.id
-                          ? `1.5px solid ${p.hex}`
-                          : '1.5px solid transparent',
-                      }}
-                      className="text-[9px] uppercase tracking-[0.2em] pb-0.5 transition-all"
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
+            <div style={{ padding: '8px 16px 14px', borderTop: '1px solid rgba(168,85,247,0.07)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                {PRIORITIES.map(p => (
+                  <button key={p.id} onClick={() => setSelectedPriority(p.id)}
+                    style={{
+                      fontFamily: NU, fontWeight: 700, fontSize: '11px',
+                      padding: '4px 12px', borderRadius: '999px', cursor: 'pointer', transition: 'all 0.2s',
+                      border: `1.5px solid ${selectedPriority === p.id ? p.hex : 'transparent'}`,
+                      background: selectedPriority === p.id ? p.pillBg : 'transparent',
+                      color: selectedPriority === p.id ? p.hex : '#C4B5FD',
+                    }}
+                  >{p.label}</button>
+                ))}
               </div>
-
-              {/* Color swatches */}
-              <div className="flex items-center gap-2">
-                <Palette className="w-3 h-3" style={{ color: '#C8C3BB' }} />
-                <div className="flex gap-1.5">
-                  {COLORS.map(c => (
-                    <button
-                      key={c.id}
-                      onClick={() => setSelectedColor(c.id)}
-                      style={{ backgroundColor: c.hex }}
-                      className={`w-3.5 h-3.5 rounded-full transition-all ${
-                        selectedColor === c.id
-                          ? 'ring-2 ring-offset-1 ring-[#1C1A26]/25 scale-110'
-                          : 'opacity-30 hover:opacity-70'
-                      }`}
-                    />
-                  ))}
-                </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {COLORS.map(c => (
+                  <button key={c.id} onClick={() => setSelectedColor(c.id)}
+                    style={{
+                      width: selectedColor === c.id ? '18px' : '14px',
+                      height: selectedColor === c.id ? '18px' : '14px',
+                      borderRadius: '50%', background: c.hex, border: 'none', cursor: 'pointer',
+                      outline: selectedColor === c.id ? `3px solid ${c.hex}55` : 'none',
+                      outlineOffset: '2px', transition: 'all 0.2s',
+                      opacity: selectedColor === c.id ? 1 : 0.4,
+                    }}
+                  />
+                ))}
               </div>
             </div>
           </div>
         </div>
 
         {/* ── FILTER BAR ─────────────────────────────────────── */}
-        <div className="flex items-center justify-between mb-6 px-0.5">
-          <div className="flex gap-4">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
             {(['all', 'active', 'completed'] as FilterType[]).map(f => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
+              <button key={f} onClick={() => setFilter(f)}
                 style={{
-                  fontFamily: MONO,
-                  color: filter === f ? '#1C1A26' : '#B8B3AB',
-                  borderBottom: filter === f
-                    ? '1.5px solid #1C1A26'
-                    : '1.5px solid transparent',
+                  fontFamily: NU, fontWeight: 700, fontSize: '12px',
+                  padding: '6px 16px', borderRadius: '999px', border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                  background: filter === f ? 'linear-gradient(135deg, #A855F7, #EC4899)' : 'rgba(255,255,255,0.6)',
+                  color: filter === f ? 'white' : '#9B84BC',
+                  backdropFilter: 'blur(8px)',
+                  boxShadow: filter === f ? '0 4px 14px rgba(168,85,247,0.3)' : 'none',
                 }}
-                className="text-[9px] uppercase tracking-[0.22em] pb-0.5 transition-all"
               >
                 {FILTER_LABELS[f]}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-4">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <AnimatePresence>
               {stats.completed > 0 && (
                 <motion.button
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
                   onClick={clearCompleted}
-                  style={{ fontFamily: MONO, color: '#CC3329' }}
-                  className="text-[9px] uppercase tracking-[0.2em] flex items-center gap-1.5 hover:opacity-60 transition-all"
+                  style={{ fontFamily: NU, fontWeight: 700, fontSize: '11px', color: '#F472B6', background: 'rgba(244,114,182,0.1)', border: 'none', borderRadius: '999px', padding: '5px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  className="hover:opacity-70 transition-opacity"
                 >
-                  <Trash2 className="w-2.5 h-2.5" />
-                  Очистить
+                  <Trash2 size={11} /> Очистить
                 </motion.button>
               )}
             </AnimatePresence>
-            <span
-              style={{ fontFamily: MONO, color: '#C8C3BB' }}
-              className="hidden sm:block text-[9px] uppercase tracking-[0.2em]"
-            >
+            <span className="hidden sm:block" style={{ fontFamily: NU, fontWeight: 700, fontSize: '11px', color: '#C4B5FD' }}>
               {filteredTodos.length} задач
             </span>
           </div>
@@ -337,178 +293,113 @@ export default function App() {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={filter}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.1 }}
           >
             <AnimatePresence initial={false}>
-              {filteredTodos.length > 0 ? (
-                filteredTodos.map(todo => {
-                  const priorityConfig = PRIORITIES.find(p => p.id === todo.priority);
-                  const colorConfig    = COLORS.find(c => c.id === todo.color);
+              {filteredTodos.length > 0 ? filteredTodos.map(todo => {
+                const pc = PRIORITIES.find(p => p.id === todo.priority)!;
+                const cc = COLORS.find(c => c.id === todo.color)!;
+                return (
+                  <motion.div
+                    key={todo.id}
+                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.15 } }}
+                    className="group mb-3"
+                    style={{
+                      background: todo.completed ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.78)',
+                      backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
+                      border: '1.5px solid rgba(255,255,255,0.9)', borderRadius: '18px',
+                      boxShadow: todo.completed ? '0 2px 12px rgba(0,0,0,0.04)' : `0 4px 28px ${cc.glow}, 0 2px 6px rgba(0,0,0,0.04)`,
+                      opacity: todo.completed ? 0.72 : 1,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px 16px' }}>
 
-                  return (
-                    <motion.article
-                      key={todo.id}
-                      initial={{ opacity: 0, y: 8, scale: 0.99 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
-                      className="relative rounded-xl overflow-hidden mb-3 group"
-                      style={{
-                        background: todo.completed ? '#F3EFE6' : '#FFFDF9',
-                        border: '1px solid rgba(28,26,38,0.07)',
-                        boxShadow: '0 1px 4px rgba(28,26,38,0.05), 0 1px 2px rgba(28,26,38,0.04)',
-                      }}
-                    >
-                      {/* Left color tab */}
-                      {!todo.completed && (
-                        <div
-                          className="absolute inset-y-0 left-0 w-1"
-                          style={{ backgroundColor: colorConfig?.hex }}
-                        />
-                      )}
+                      {/* Checkbox */}
+                      <button onClick={() => toggleTodo(todo.id)}
+                        style={{ flexShrink: 0, marginTop: '2px', border: 'none', background: 'transparent', cursor: 'pointer', color: todo.completed ? '#A855F7' : 'rgba(168,85,247,0.25)', transition: 'all 0.2s' }}
+                        className="hover:scale-110"
+                      >
+                        {todo.completed ? <CheckCircle2 size={22} /> : <Circle size={22} />}
+                      </button>
 
-                      <div className={`flex items-start gap-3 py-3.5 pr-4 ${!todo.completed ? 'pl-5' : 'pl-4'}`}>
-
-                        {/* Checkbox */}
-                        <button
-                          onClick={() => toggleTodo(todo.id)}
-                          className="flex-shrink-0 mt-0.5 transition-all hover:scale-110"
-                          style={{ color: todo.completed ? '#2D7A4F' : '#C8C3BB' }}
-                        >
-                          {todo.completed
-                            ? <CheckCircle2 className="w-5 h-5" />
-                            : <Circle className="w-5 h-5" />
-                          }
-                        </button>
-
-                        {/* Content */}
-                        {editingId === todo.id ? (
-                          <div className="flex-grow space-y-2.5">
-                            <input
-                              autoFocus
-                              type="text"
-                              value={editValue}
-                              onChange={e => setEditValue(e.target.value)}
-                              onBlur={() => saveEdit(todo.id)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter')  saveEdit(todo.id);
-                                if (e.key === 'Escape') cancelEdit();
-                              }}
-                              style={{ fontFamily: SERIF, borderBottom: '1.5px solid #C4800A' }}
-                              className="w-full text-base italic bg-transparent focus:outline-none py-0.5 text-[#1C1A26]"
-                            />
-                            <div className="flex items-center gap-3">
-                              <div className="flex gap-3">
-                                {PRIORITIES.map(p => (
-                                  <button
-                                    key={p.id}
-                                    onMouseDown={e => {
-                                      e.preventDefault();
-                                      updateTodoProperty(todo.id, { priority: p.id });
-                                    }}
-                                    style={{
-                                      fontFamily: MONO,
-                                      color: todo.priority === p.id ? p.hex : '#C8C3BB',
-                                      borderBottom: todo.priority === p.id
-                                        ? `1px solid ${p.hex}`
-                                        : '1px solid transparent',
-                                    }}
-                                    className="text-[8px] uppercase tracking-[0.2em] pb-0.5 transition-all"
-                                  >
-                                    {p.label}
-                                  </button>
-                                ))}
-                              </div>
-                              <div className="flex gap-1">
-                                {COLORS.map(c => (
-                                  <button
-                                    key={c.id}
-                                    onMouseDown={e => {
-                                      e.preventDefault();
-                                      updateTodoProperty(todo.id, { color: c.id });
-                                    }}
-                                    style={{ backgroundColor: c.hex }}
-                                    className={`w-3 h-3 rounded-full transition-all ${
-                                      todo.color === c.id
-                                        ? 'ring-1 ring-offset-1 ring-[#1C1A26]/25 scale-110'
-                                        : 'opacity-30 hover:opacity-70'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
+                      {/* Content */}
+                      {editingId === todo.id ? (
+                        <div style={{ flexGrow: 1 }}>
+                          <input autoFocus type="text" value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={() => saveEdit(todo.id)}
+                            onKeyDown={e => { if (e.key === 'Enter') saveEdit(todo.id); if (e.key === 'Escape') cancelEdit(); }}
+                            style={{ width: '100%', fontFamily: NU, fontWeight: 600, fontSize: '15px', background: 'transparent', border: 'none', borderBottom: '2px solid #A855F7', outline: 'none', color: '#2D1B69', paddingBottom: '4px', marginBottom: '10px' }}
+                          />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              {PRIORITIES.map(p => (
+                                <button key={p.id}
+                                  onMouseDown={e => { e.preventDefault(); updateTodoProperty(todo.id, { priority: p.id }); }}
+                                  style={{ fontFamily: NU, fontWeight: 700, fontSize: '10px', padding: '3px 10px', borderRadius: '999px', cursor: 'pointer', border: `1.5px solid ${todo.priority === p.id ? p.hex : 'transparent'}`, background: todo.priority === p.id ? p.pillBg : 'transparent', color: todo.priority === p.id ? p.hex : '#C4B5FD' }}
+                                >{p.label}</button>
+                              ))}
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              {COLORS.map(c => (
+                                <button key={c.id}
+                                  onMouseDown={e => { e.preventDefault(); updateTodoProperty(todo.id, { color: c.id }); }}
+                                  style={{ width: '12px', height: '12px', borderRadius: '50%', background: c.hex, border: 'none', cursor: 'pointer', outline: todo.color === c.id ? `3px solid ${c.hex}55` : 'none', outlineOffset: '2px', opacity: todo.color === c.id ? 1 : 0.35 }}
+                                />
+                              ))}
                             </div>
                           </div>
-                        ) : (
-                          <div className="flex-grow min-w-0">
-                            <span
-                              style={{ fontFamily: MONO, color: priorityConfig?.hex }}
-                              className="block text-[8px] uppercase tracking-[0.25em] mb-0.5"
-                            >
-                              {priorityConfig?.label}
-                            </span>
-                            <span
-                              onDoubleClick={() => !todo.completed && startEditing(todo.id, todo.text)}
-                              style={{ fontFamily: SERIF }}
-                              className={`block text-base leading-relaxed break-words cursor-text transition-all duration-300 ${
-                                todo.completed
-                                  ? 'line-through text-[#B8B3AB] decoration-1'
-                                  : 'text-[#1C1A26]'
-                              }`}
-                            >
-                              {todo.text}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Action buttons */}
-                        <div className="flex items-center gap-0.5 flex-shrink-0 mt-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          {!todo.completed && editingId !== todo.id && (
-                            <button
-                              onClick={() => startEditing(todo.id, todo.text)}
-                              className="p-1.5 rounded-lg transition-all hover:opacity-60"
-                              style={{ color: '#C8C3BB' }}
-                              aria-label="Редактировать"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => deleteTodo(todo.id)}
-                            className="p-1.5 rounded-lg transition-all hover:opacity-60"
-                            style={{ color: '#C8C3BB' }}
-                            onMouseEnter={e => (e.currentTarget.style.color = '#CC3329')}
-                            onMouseLeave={e => (e.currentTarget.style.color = '#C8C3BB')}
-                            aria-label="Удалить"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
                         </div>
+                      ) : (
+                        <div style={{ flexGrow: 1, minWidth: 0 }}>
+                          <span style={{ display: 'inline-block', fontFamily: NU, fontWeight: 700, fontSize: '10px', color: pc.hex, background: pc.pillBg, borderRadius: '999px', padding: '2px 10px', marginBottom: '5px' }}>
+                            {pc.label}
+                          </span>
+                          <p
+                            onDoubleClick={() => !todo.completed && startEditing(todo.id, todo.text)}
+                            style={{ fontFamily: NU, fontWeight: todo.completed ? 400 : 600, fontSize: '15px', lineHeight: 1.5, color: todo.completed ? '#C4B5FD' : '#2D1B69', textDecoration: todo.completed ? 'line-through' : 'none', textDecorationColor: '#C4B5FD', cursor: 'text', margin: 0, wordBreak: 'break-word' }}
+                          >
+                            {todo.text}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0, marginTop: '2px' }}>
+                        {!todo.completed && editingId !== todo.id && (
+                          <button onClick={() => startEditing(todo.id, todo.text)}
+                            style={{ padding: '6px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#C4B5FD', cursor: 'pointer', transition: 'all 0.2s' }}
+                            className="hover:bg-purple-50 hover:!text-purple-400"
+                            aria-label="Редактировать"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        )}
+                        <button onClick={() => deleteTodo(todo.id)}
+                          style={{ padding: '6px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#C4B5FD', cursor: 'pointer', transition: 'all 0.2s' }}
+                          className="hover:bg-pink-50 hover:!text-pink-400"
+                          aria-label="Удалить"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
-                    </motion.article>
-                  );
-                })
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="py-16 text-center"
-                >
-                  <div className="mb-5" style={{ color: '#D5D0C6' }}>
-                    {filter === 'completed'
-                      ? <CheckCircle   className="w-9 h-9 mx-auto" />
-                      : filter === 'active'
-                        ? <CircleDashed className="w-9 h-9 mx-auto" />
-                        : <ListTodo    className="w-9 h-9 mx-auto" />
-                    }
+                    </div>
+                  </motion.div>
+                );
+              }) : (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ padding: '60px 20px', textAlign: 'center' }}>
+                  <div style={{ color: '#DDD6FE', marginBottom: '16px' }}>
+                    {filter === 'completed' ? <CheckCircle size={40} style={{ margin: '0 auto' }} />
+                      : filter === 'active'  ? <CircleDashed size={40} style={{ margin: '0 auto' }} />
+                      : <ListTodo size={40} style={{ margin: '0 auto' }} />}
                   </div>
-                  <p style={{ fontFamily: SERIF, color: '#C8C3BB' }} className="text-xl italic">
-                    {filter === 'all'
-                      ? 'Список пуст — время действовать'
-                      : filter === 'active'
-                        ? 'Все задачи выполнены'
-                        : 'Нет выполненных задач'}
+                  <p style={{ fontFamily: NU, fontWeight: 600, color: '#C4B5FD', fontSize: '16px' }}>
+                    {filter === 'all' ? 'Пусто ✨ Самое время добавить задачи!'
+                      : filter === 'active' ? 'Все задачи выполнены! 🎉'
+                      : 'Нет выполненных задач. Вперёд! 💪'}
                   </p>
                 </motion.div>
               )}
@@ -518,23 +409,14 @@ export default function App() {
 
         {/* ── FOOTER ─────────────────────────────────────────── */}
         {todos.length > 0 && (
-          <footer
-            className="mt-12 pt-5 flex items-center justify-center gap-8"
-            style={{ borderTop: '1px solid rgba(28,26,38,0.09)' }}
-          >
-            <span
-              style={{ fontFamily: MONO, color: '#6366F1' }}
-              className="text-[8px] uppercase tracking-[0.25em] flex items-center gap-2"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.45)] inline-block" />
-              {stats.active} Активно
+          <footer style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid rgba(168,85,247,0.1)', display: 'flex', justifyContent: 'center', gap: '32px' }}>
+            <span style={{ fontFamily: NU, fontWeight: 700, fontSize: '11px', color: '#A78BFA', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#A78BFA', boxShadow: '0 0 8px rgba(167,139,250,0.6)', display: 'inline-block' }} />
+              {stats.active} активно
             </span>
-            <span
-              style={{ fontFamily: MONO, color: '#059669' }}
-              className="text-[8px] uppercase tracking-[0.25em] flex items-center gap-2"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.45)] inline-block" />
-              {stats.completed} Выполнено
+            <span style={{ fontFamily: NU, fontWeight: 700, fontSize: '11px', color: '#34D399', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#34D399', boxShadow: '0 0 8px rgba(52,211,153,0.6)', display: 'inline-block' }} />
+              {stats.completed} выполнено
             </span>
           </footer>
         )}
